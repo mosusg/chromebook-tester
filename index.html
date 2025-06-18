@@ -7,11 +7,14 @@
 </head>
 <body>
     <header id="title-bar">
-	<h1>💻 Device Hardware Tester</h1>
-	<label class="switch">
-		<input type="checkbox" id="dark-toggle">
-		<span class="slider"></span>
-	</label>
+    <h1>💻 Device Hardware Tester</h1>
+	<div class="toggle-wrapper">
+        <span id="theme-icon">Dark Mode 🌞</span>
+		<label class="switch">
+			<input type="checkbox" id="dark-toggle">
+			<span class="slider"></span>
+		</label>
+	</div>
 </header>
 
 <details open>
@@ -39,8 +42,8 @@
         <section id="microphone">
             <h2>Click to record an audio snippet to test the microphone</h2>
             <button id="record-btn">Start Recording</button>
-            <canvas id="mic-waveform" width="400" height="80" style="display: none;"></canvas>
-            <audio id="mic-playback" controls style="display: none;"></audio>
+            <canvas id="mic-waveform" width="500" height="100"></canvas>
+            <audio id="mic-playback"></audio>
         </section>
 </details>
 
@@ -49,6 +52,8 @@
         <section id="speaker">
             <h2>Click to play a sound</h2>
             <button id="play-sound">Play Test Sound</button>
+	        <label id="volume-label" for="volume-slider">🔊</label>
+	        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" style="vertical-align: middle; margin: 0; height: 2px;">
         </section>
 </details>
 

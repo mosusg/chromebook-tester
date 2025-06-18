@@ -138,89 +138,146 @@ navigator.mediaDevices.getUserMedia({ video: true })
   });
 
 // Microphone tester
-const recordBtn = document.getElementById('record-btn');
-const playback = document.getElementById('mic-playback');
-const canvas = document.getElementById('mic-waveform');
-const ctx = canvas.getContext('2d');
+const micButton = document.getElementById('record-btn');
+const micPlayback = document.getElementById('mic-playback');
+const micCanvas = document.getElementById('mic-waveform');
 
 let mediaRecorder;
 let audioChunks = [];
-let recording = false;
+let isRecording = false;
+let micStream;
+let analyser;
+let dataArray;
+let animationId;
 
-let analyser, dataArray, source, audioContext, drawId;
+micButton.addEventListener('click', async () => {
+	if (!isRecording) {
+		try {
+			micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			mediaRecorder = new MediaRecorder(micStream);
+			audioChunks = [];
 
-recordBtn.addEventListener('click', async () => {
-  if (!recording) {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    // Setup media recorder
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
-      const audioUrl = URL.createObjectURL(blob);
-      playback.src = audioUrl;
-      playback.style.display = 'block';
-      audioChunks = [];
-    };
+			// Start recording
+			mediaRecorder.start();
+			isRecording = true;
+			micButton.textContent = 'Stop Recording';
 
-    // Setup waveform visualizer
-    canvas.style.display = 'block';
-    audioContext = new AudioContext();
-    source = audioContext.createMediaStreamSource(stream);
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048;
-    source.connect(analyser);
-    dataArray = new Uint8Array(analyser.fftSize);
+			// Start visualizer
+			const audioContext = new AudioContext();
+			const source = audioContext.createMediaStreamSource(micStream);
+			analyser = audioContext.createAnalyser();
+			analyser.fftSize = 2048;
+			const bufferLength = analyser.fftSize;
+			dataArray = new Uint8Array(bufferLength);
+			source.connect(analyser);
+			drawMicrophoneVisualizer(analyser, dataArray, micCanvas);
 
-    function drawWaveform() {
-      drawId = requestAnimationFrame(drawWaveform);
-      analyser.getByteTimeDomainData(dataArray);
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = 'lime';
-
-      const sliceWidth = canvas.width / dataArray.length;
-      let x = 0;
-
-      for (let i = 0; i < dataArray.length; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-
-        x += sliceWidth;
-      }
-
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
-    }
-
-    drawWaveform();
-    mediaRecorder.start();
-    recordBtn.textContent = 'Stop Recording';
-    recording = true;
-
-  } else {
-    mediaRecorder.stop();
-    audioContext.close();
-    cancelAnimationFrame(drawId);
-    recordBtn.textContent = 'Start Recording';
-    recording = false;
-  }
+			mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+	            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+	            micPlayback.src = URL.createObjectURL(blob);
+	            micPlayback.controls = true;
+	            micPlayback.load();
+            };
+		} catch (err) {
+			console.error('Microphone error:', err);
+			alert('Microphone access denied or mic is not working');
+		}
+	} else {
+		// Stop recording
+		mediaRecorder.stop();
+		micStream.getTracks().forEach(track => track.stop());
+		cancelAnimationFrame(animationId);
+		isRecording = false;
+		micButton.textContent = 'Record Microphone';
+	}
 });
+
+function drawMicrophoneVisualizer(analyser, dataArray, canvas) {
+	const ctx = canvas.getContext('2d');
+
+	function draw() {
+		animationId = requestAnimationFrame(draw);
+		analyser.getByteTimeDomainData(dataArray);
+
+		const darkMode = document.body.classList.contains('dark-mode');
+		const bgColor = darkMode ? '#000000' : '#00ffff';    // black or cyan
+		const waveColor = darkMode ? '#00ff00' : '#000000';  // lime or black
+
+		ctx.fillStyle = bgColor;
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = waveColor;
+		ctx.beginPath();
+
+		const sliceWidth = canvas.width / dataArray.length;
+		let x = 0;
+
+		for (let i = 0; i < dataArray.length; i++) {
+			const v = dataArray[i] / 128.0;
+			const y = v * canvas.height / 2;
+
+			if (i === 0) {
+				ctx.moveTo(x, y);
+			} else {
+				ctx.lineTo(x, y);
+			}
+			x += sliceWidth;
+		}
+
+		ctx.lineTo(canvas.width, canvas.height / 2);
+		ctx.stroke();
+	}
+
+	draw();
+}
 
 // Speaker tester
-document.getElementById('play-sound').addEventListener('click', () => {
-  const audio = new Audio('test-audio.mp3');
-  audio.play();
+const speakerTests = [
+	'audio/test1.mp3',
+	'audio/test2.mp3',
+	'audio/test3.mp3',
+	'audio/test4.mp3'
+];
+
+const volumeSlider = document.getElementById('volume-slider');
+const volumeLabel = document.getElementById('volume-label');
+const playButton = document.getElementById('play-sound');
+
+let currentAudio = null;  // hold current audio object
+
+volumeSlider.addEventListener('input', () => {
+	const vol = parseFloat(volumeSlider.value);
+	volumeLabel.textContent = vol === 0 ? '🔈' : vol < 0.5 ? '🔉' : '🔊';
+
+	if (currentAudio) {
+		currentAudio.volume = vol;  // dynamically adjust volume if playing
+	}
 });
 
+playButton.addEventListener('click', () => {
+	const randomIndex = Math.floor(Math.random() * speakerTests.length);
+	const selectedFile = speakerTests[randomIndex];
+
+	// If an audio is already playing, stop it before starting a new one
+	if (currentAudio) {
+		currentAudio.pause();
+		currentAudio = null;
+	}
+
+	currentAudio = new Audio(selectedFile);
+	currentAudio.volume = volumeSlider.value;
+	currentAudio.play();
+});
+
+// Dark mode stuff
 const darkToggle = document.getElementById('dark-toggle');
+const themeIcon = document.getElementById('theme-icon');
 
 darkToggle.addEventListener('change', () => {
-	document.body.classList.toggle('dark-mode', darkToggle.checked);
+	const darkModeOn = darkToggle.checked;
+	document.body.classList.toggle('dark-mode', darkModeOn);
+	themeIcon.textContent = darkModeOn ? 'Dark Mode 🌝' : 'Dark Mode 🌞';
 });
+
