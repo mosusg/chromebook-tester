@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Hardware Tester</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header id="title-bar">
+	<h1>💻 Device Hardware Tester</h1>
+	<label class="switch">
+		<input type="checkbox" id="dark-toggle">
+		<span class="slider"></span>
+	</label>
+</header>
+
+<details open>
+    <summary>🎹 Keyboard Tester</summary>
+        <div id="keyboard-container" tabindex="0">
+            <section id="keyboard">
+                <h2>Keyboard Test</h2>
+                <p>Track keys pressed to make sure your keyboard works</p>
+                <div id="keyboard-visual" class="keyboard"></div>
+                <button id="reset-keys">Reset Keys</button>
+            </section>
+        </div>
+</details>
+
+<details>
+    <summary>📷 Camera Tester</summary>
+        <section id="camera">
+            <h2>Live feed from your camera</h2>
+            <video id="camera-preview" autoplay playsinline></video>
+        </section>
+</details>
+
+<details>
+    <summary>🎤 Microphone Tester</summary>
+        <section id="microphone">
+            <h2>Click to record an audio snippet to test the microphone</h2>
+            <button id="record-btn">Start Recording</button>
+            <canvas id="mic-waveform" width="400" height="80" style="display: none;"></canvas>
+            <audio id="mic-playback" controls style="display: none;"></audio>
+        </section>
+</details>
+
+<details>
+    <summary>🔊 Speaker Tester</summary>
+        <section id="speaker">
+            <h2>Click to play a sound</h2>
+            <button id="play-sound">Play Test Sound</button>
+        </section>
+</details>
+
+<script src="script.js"></script>
+</body>
+</html>
