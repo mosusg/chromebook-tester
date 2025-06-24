@@ -238,7 +238,8 @@ const speakerTests = [
 	'audio/test1.mp3',
 	'audio/test2.mp3',
 	'audio/test3.mp3',
-	'audio/test4.mp3'
+	'audio/test4.mp3',
+	'audio/test5.mp3'
 ];
 
 const volumeSlider = document.getElementById('volume-slider');
